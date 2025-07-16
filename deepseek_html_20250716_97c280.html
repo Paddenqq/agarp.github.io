@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgarVS Mini</title>
+  <style>
+    /* TEMEL STİLLER */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: white;
+      height: 100%;
+    }
+    
+    /* NAVİGASYON ÇUBUĞU */
+    nav {
+      background-color: #222;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+    }
+    
+    nav h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #00ffcc;
+    }
+    
+    nav a {
+      color: white;
+      margin-left: 20px;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    nav a:hover {
+      color: #00ffcc;
+    }
+    
+    /* SAYFA İÇERİKLERİ */
+    #main, #gamePage, #loginPage, #registerPage {
+      display: none;
+      padding: 20px;
+      margin-top: 60px; /* Navigasyon çubuğu için boşluk */
+      min-height: calc(100vh - 100px);
+    }
+    
+    #gamePage {
+      position: relative;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    /* OYUN ALANI */
+    canvas {
+      display: block;
+      background-color: #111;
+      margin: 0 auto;
+    }
+    
+    /* ALTIN GÖSTERGESİ */
+    #goldDisplay {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      color: gold;
+      font-size: 20px;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px #000;
+      z-index: 101;
+    }
+    
+    /* ORTALANMIŞ İÇERİK */
+    .centered {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    /* BUTONLAR */
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #00ffcc;
+      color: black;
+      border: none;
+      margin-top: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+    
+    .btn:hover {
+      background: #00e6b8;
+    }
+    
+    /* GİRİŞ ALANLARI */
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+      width: 80%;
+      max-width: 300px;
+      border-radius: 5px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- NAVİGASYON ÇUBUĞU -->
+  <nav>
+    <h1>AgarVS Mini</h1>
+    <div>
+      <a href="#" onclick="showPage('main')">Ana Sayfa</a>
+      <a href="#" onclick="showPage('loginPage')">Giriş Yap</a>
+      <a href="#" onclick="showPage('registerPage')">Kayıt Ol</a>
+      <a href="#" onclick="showPage('gamePage')">Oyunu Başlat</a>
+    </div>
+  </nav>
+
+  <!-- ANA SAYFA -->
+  <div id="main" class="centered">
+    <h2>Hoş Geldiniz!</h2>
+    <p>AgarVS Mini, basit bir Agar.io klonudur. Renkli topları yiyerek büyür ve altın kazanırsınız. Üye olarak skorlarınızı kaydedebilir ve arkadaşlarınızla yarışabilirsiniz.</p>
+    <button class="btn" onclick="showPage('gamePage')">Hemen Oyna</button>
+  </div>
+
+  <!-- GİRİŞ SAYFASI -->
+  <div id="loginPage" class="centered">
+    <h2>Giriş Yap</h2>
+    <input type="text" id="loginUsername" placeholder="Kullanıcı Adı"><br>
+    <input type="password" id="loginPassword" placeholder="Şifre"><br>
+    <button class="btn" onclick="login()">Giriş Yap</button>
+    <p>Hesabınız yok mu? <a href="#" onclick="showPage('registerPage')">Kayıt olun</a></p>
+  </div>
+
+  <!-- KAYIT SAYFASI -->
+  <div id="registerPage" class="centered">
+    <h2>Kayıt Ol</h2>
+    <input type="text" id="regUsername" placeholder="Kullanıcı Adı"><br>
+    <input type="password" id="regPassword" placeholder="Şifre"><br>
+    <button class="btn" onclick="register()">Kayıt Ol</button>
+    <p>Zaten hesabınız var mı? <a href="#" onclick="showPage('loginPage')">Giriş yapın</a></p>
+  </div>
+
+  <!-- OYUN SAYFASI -->
+  <div id="gamePage">
+    <div id="goldDisplay">Altın: 0</div>
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <script>
+    // SAYFA GEÇİŞLERİ
+    function showPage(pageId) {
+      document.querySelectorAll("#main, #gamePage, #loginPage, #registerPage").forEach(el => {
+        el.style.display = "none";
+      });
+      document.getElementById(pageId).style.display = "block";
+      
+      if (pageId === 'gamePage') {
+        resizeCanvas();
+        if (!gameRunning) {
+          initGame();
+          gameRunning = true;
+        }
+      }
+    }
+    
+    // BAŞLANGIÇTA ANA SAYFAYI GÖSTER
+    showPage('main');
+    
+    // KULLANICI İŞLEMLERİ (ÖRNEK FONKSİYONLAR)
+    function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      
+      // Basit kontrol (gerçek uygulamada sunucu tarafında kontrol edilmeli)
+      if(username && password) {
+        alert("Giriş başarılı! Hoş geldiniz, " + username);
+        showPage('gamePage');
+      } else {
+        alert("Lütfen kullanıcı adı ve şifre girin!");
+      }
+    }
+    
+    function register() {
+      const username = document.getElementById("regUsername").value;
+      const password = document.getElementById("regPassword").value;
+      
+      if(username && password) {
+        alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+        showPage('loginPage');
+      } else {
+        alert("Lütfen tüm alanları doldurun!");
+      }
+    }
+    
+    // OYUN KODLARI
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const goldDisplay = document.getElementById("goldDisplay");
+    
+    let canvasWidth = window.innerWidth;
+    let canvasHeight = window.innerHeight - 60;
+    let gameRunning = false;
+    let animationId;
+    
+    // Oyun nesneleri
+    let gold = 0;
+    let player = {
+      x: 0,
+      y: 0,
+      radius: 20,
+      color: "#00ffcc",
+      speed: 3
+    };
+    
+    let foods = [];
+    let enemies = [];
+    
+    // Oyun harita boyutu
+    const mapSize = 3000;
+    
+    // Pencere boyutu değiştiğinde canvas'ı yeniden boyutlandır
+    window.addEventListener('resize', resizeCanvas);
+    
+    function resizeCanvas() {
+      canvasWidth = window.innerWidth;
+      canvasHeight = window.innerHeight - 60;
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+    }
+    
+    // Fare hareketlerini takip et
+    let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+    window.addEventListener("mousemove", e => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY - 60;
+    });
+    
+    // Oyunu başlat
+    function initGame() {
+      // Oyuncuyu merkeze yerleştir
+      player.x = mapSize / 2;
+      player.y = mapSize / 2;
+      player.radius = 20;
+      gold = 0;
+      
+      // Yiyecekleri oluştur
+      createFoods(150);
+      
+      // Düşmanları oluştur (basit AI)
+      createEnemies(5);
+      
+      // Oyun döngüsünü başlat
+      gameLoop();
+    }
+    
+    // Yiyecek oluştur
+    function createFoods(count) {
+      foods = [];
+      for (let i = 0; i < count; i++) {
+        foods.push({
+          x: Math.random() * mapSize,
+          y: Math.random() * mapSize,
+          radius: 5 + Math.random() * 8,
+          color: getRandomColor()
+        });
+      }
+    }
+    
+    // Düşman oluştur
+    function createEnemies(count) {
+      enemies = [];
+      for (let i = 0; i < count; i++) {
+        enemies.push({
+          x: Math.random() * mapSize,
+          y: Math.random() * mapSize,
+          radius: 15 + Math.random() * 30,
+          color: getRandomColor(),
+          speed: 1 + Math.random() * 2,
+          dx: Math.random() > 0.5 ? 1 : -1,
+          dy: Math.random() > 0.5 ? 1 : -1
+        });
+      }
+    }
+    
+    // Rastgele renk üret
+    function getRandomColor() {
+      return `hsl(${Math.random() * 360}, 80%, 60%)`;
+    }
+    
+    // Oyun güncellemeleri
+    function update() {
+      // Oyuncu hareketi
+      let dx = mouse.x - canvas.width / 2;
+      let dy = mouse.y - canvas.height / 2;
+      let distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 5) {
+        player.x += (dx / distance) * player.speed;
+        player.y += (dy / distance) * player.speed;
+      }
+      
+      // Oyuncunun harita sınırlarını aşmasını engelle
+      player.x = Math.max(player.radius, Math.min(mapSize - player.radius, player.x));
+      player.y = Math.max(player.radius, Math.min(mapSize - player.radius, player.y));
+      
+      // Yiyecekleri kontrol et
+      for (let i = foods.length - 1; i >= 0; i--) {
+        let food = foods[i];
+        let distX = player.x - food.x;
+        let distY = player.y - food.y;
+        let distance = Math.sqrt(distX * distX + distY * distY);
+        
+        if (distance < player.radius + food.radius) {
+          // Yiyeceği ye ve büyü
+          player.radius += food.radius * 0.2;
+          gold += Math.floor(food.radius);
+          foods.splice(i, 1);
+          
+          // Yeni yiyecek ekle
+          if (foods.length < 100) {
+            foods.push({
+              x: Math.random() * mapSize,
+              y: Math.random() * mapSize,
+              radius: 5 + Math.random() * 8,
+              color: getRandomColor()
+            });
+          }
+        }
+      }
+      
+      // Düşman hareketleri
+      enemies.forEach(enemy => {
+        // Basit AI: Rastgele hareket ve duvardan sekme
+        enemy.x += enemy.dx * enemy.speed;
+        enemy.y += enemy.dy * enemy.speed;
+        
+        if (enemy.x <= enemy.radius || enemy.x >= mapSize - enemy.radius) {
+          enemy.dx *= -1;
+        }
+        if (enemy.y <= enemy.radius || enemy.y >= mapSize - enemy.radius) {
+          enemy.dy *= -1;
+        }
+        
+        // Oyuncuyla çarpışma kontrolü
+        let distX = player.x - enemy.x;
+        let distY = player.y - enemy.y;
+        let distance = Math.sqrt(distX * distX + distY * distY);
+        
+        if (distance < player.radius + enemy.radius) {
+          if (player.radius > enemy.radius * 1.2) {
+            // Oyuncu düşmanı yiyor
+            player.radius += enemy.radius * 0.1;
+            gold += Math.floor(enemy.radius * 2);
+            enemy.radius = 0; // Yeniden doğacak
+          } else if (enemy.radius > player.radius * 1.2) {
+            // Düşman oyuncuyu yiyor
+            alert("Oyun bitti! Skorunuz: " + gold);
+            showPage('main');
+          }
+        }
+      });
+      
+      // Altın göstergeyi güncelle
+      goldDisplay.innerText = `Altın: ${gold}`;
+    }
+    
+    // Oyun çizimleri
+    function draw() {
+      // Arka planı temizle
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Görünüm alanını hesapla (oyuncuyu merkezde tut)
+      const viewX = player.x - canvas.width / 2;
+      const viewY = player.y - canvas.height / 2;
+      
+      // Görünüm alanını ayarla
+      ctx.save();
+      ctx.translate(-viewX, -viewY);
+      
+      // Yiyecekleri çiz
+      foods.forEach(food => {
+        ctx.beginPath();
+        ctx.arc(food.x, food.y, food.radius, 0, Math.PI * 2);
+        ctx.fillStyle = food.color;
+        ctx.fill();
+        ctx.closePath();
+      });
+      
+      // Düşmanları çiz
+      enemies.forEach(enemy => {
+        if (enemy.radius > 0) {
+          ctx.beginPath();
+          ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
+          ctx.fillStyle = enemy.color;
+          ctx.fill();
+          ctx.closePath();
+        } else {
+          // Ölü düşmanları yeniden doğur
+          enemy.x = Math.random() * mapSize;
+          enemy.y = Math.random() * mapSize;
+          enemy.radius = 15 + Math.random() * 30;
+          enemy.color = getRandomColor();
+        }
+      });
+      
+      // Oyuncuyu çiz
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fillStyle = player.color;
+      ctx.fill();
+      ctx.closePath();
+      
+      // Oyuncu adı (eğer giriş yapıldıysa)
+      if (document.getElementById("loginUsername").value) {
+        ctx.fillStyle = "white";
+        ctx.font = "bold 16px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(document.getElementById("loginUsername").value, player.x, player.y + player.radius + 20);
+      }
+      
+      // Görünüm alanını sıfırla
+      ctx.restore();
+    }
+    
+    // Oyun döngüsü
+    function gameLoop() {
+      update();
+      draw();
+      animationId = requestAnimationFrame(gameLoop);
+    }
+    
+    // Sayfadan çıkarken animasyonu durdur
+    window.addEventListener('beforeunload', () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    });
+  </script>
+</body>
+</html>
